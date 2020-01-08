@@ -8,6 +8,7 @@ import tmp from "tmp";
 import { writeFile, readdirSync, unlinkSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
+// import * as onnx from "onnxjs-node";
 
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === "development";
@@ -41,8 +42,8 @@ polka({ server })
   });
 
 const socket = io(server);
-socket.on("connection", function(socket) {
-  socket.on("message", function(data) {
+socket.on("connection", function (socket) {
+  socket.on("message", function (data) {
     saveTmp(JSON.parse(data));
   });
 });
@@ -71,9 +72,7 @@ function runMatlab(path) {
 
   //TODO: update command
   // run matlab
-  const matlabProcess = spawn("dir", [
-    "C:\\Users\\Philip\\AppData\\Local\\Temp"
-  ]);
+  const matlabProcess = spawn("ls");
 
   return new Promise(res => {
     // listen to process output and send it over socket
@@ -89,3 +88,23 @@ function runMatlab(path) {
     });
   });
 }
+
+
+// const session = new onnx.InferenceSession({backendHint: 'wasm'});
+// const session = new onnx.InferenceSession();
+
+// setupModel().then(predict)
+
+// async function setupModel() {
+//   // use the following in an async method
+//   const url = "./test.onnx";
+//   await session.loadModel(url);
+// }
+
+// async function predict() {
+//   const inputs = [
+//     new onnx.Tensor(new Float32Array([1.0, 2.0, 3.0, 4.0]), "float32", [2, 2])
+//   ];
+//   const outputMap = await session.run(inputs);
+//   const outputTensor = outputMap.values().next().value;
+// }

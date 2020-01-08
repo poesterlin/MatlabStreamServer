@@ -61,7 +61,7 @@
       z = Math.random() * 10;
       update();
     }, interval);
-  }, 100);
+  }, 1000);
 
   function update() {
     history.push({ x, y, z });
