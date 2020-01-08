@@ -1,14 +1,30 @@
 <script>
   import io from "socket.io-client";
-  import { fade } from "svelte/transition";
 
   $: history = [];
-  const historyLength = 20;
+  const historyLength = 300;
 
   $: x = 0;
   $: y = 0;
   $: z = 0;
   $: message = "";
+  $: log = [];
+
+  const height = 300;
+  $: barWidth = document.documentElement.clientWidth / historyLength;
+
+  const socket = io();
+  socket.on("results", results => {
+    log.push(results);
+    if (log.length === 10) {
+      log.shift();
+    }
+    log = log;
+  });
+
+  function submit() {
+    socket.emit("message", JSON.stringify(history));
+  }
 
   if ("Accelerometer" in window) {
     let accelerometer = new Accelerometer({ frequency: 10 });
@@ -22,9 +38,9 @@
 
     accelerometer.start();
   } else {
-	  Promise.resolve().then(()=>{
-		  message += 'no sensor suppport '
-	  })
+    Promise.resolve().then(() => {
+      message += "no sensor suppport ";
+    });
   }
 
   setTimeout(() => {
@@ -45,6 +61,8 @@
       z = Math.random() * 10;
       update();
     }, inteval);
+
+    console.log(barWidth * historyLength);
   }, 100);
 
   function update() {
@@ -59,17 +77,6 @@
 
     history = history;
   }
-
-  const socket = io();
-
-  function submit() {
-    socket.emit("message", JSON.stringify(history));
-  }
-
-  const width = window.innerWidth * 0.8;
-  const height = 500;
-  $: innerWidth = width - 50;
-  $: barWidth = innerWidth / historyLength;
 
   const max = 40;
   $: xPath = `M0 ${height / 2} `.concat(
@@ -100,8 +107,8 @@
 
 <style>
   svg {
-    width: 80vw;
-    height: 500px;
+    width: 100vw;
+    height: 300px;
   }
   .bars path {
     opacity: 0.4;
@@ -122,7 +129,22 @@
   h4 {
     margin-left: 20px;
   }
+
+  .logs {
+    max-height: 30vh;
+    width: 100vw;
+    overflow: auto;
+  }
+
+  .log {
+    white-space: nowrap;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 </style>
+
+{@debug barWidth}
 
 <svelte:head>
   <title>AccTest</title>
@@ -130,9 +152,11 @@
 
 <h1 style="color:red">{message}</h1>
 
-<h4>{x}</h4>
-<h4>{y}</h4>
-<h4>{z}</h4>
+<br>
+<h3>Data:</h3>
+<h4>X: {x}</h4>
+<h4>Y: {y}</h4>
+<h4>Z: {z}</h4>
 
 <svg>
   <g class="bars">
@@ -141,3 +165,10 @@
     <path d={zPath} class="z" />
   </g>
 </svg>
+
+<div class="logs">
+  Results:
+  {#each log as l}
+    <div class="log">{l}</div>
+  {/each}
+</div>
