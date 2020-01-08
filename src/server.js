@@ -7,7 +7,6 @@ import io from "socket.io";
 import tmp from "tmp";
 import { writeFile } from "fs";
 import { spawn } from "child_process";
-
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === "development";
 
@@ -30,18 +29,23 @@ socket.on("connection", function(socket) {
   });
 });
 
+tmp.setGracefulCleanup();
+
 function saveTmp(arr) {
-  tmp.file({ prefix: "data-", postfix: ".csv" }, (err, path, _, cleanup) => {
-    if (err) {
-      console.error(err);
-      return;
+  tmp.file(
+    { prefix: "data-", postfix: ".csv", dir: "csv" },
+    (err, path, _, cleanup) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      const header = "time x y z\n";
+      const csv = arr
+        .map((line, i) => `${i * 100},${line.x},${line.y},${line.z}`)
+        .join("\n");
+      writeFile(path, header.concat(csv), () => runMatlab(path).then(cleanup));
     }
-    const header = "time x y z\n";
-    const csv = arr
-      .map((line, i) => `${i * 100},${line.x},${line.y},${line.z}`)
-      .join("\n");
-    writeFile(path, header.concat(csv), () => runMatlab(path).then(cleanup));
-  });
+  );
 }
 
 function runMatlab(path) {
