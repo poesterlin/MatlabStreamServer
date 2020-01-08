@@ -48,21 +48,19 @@
       return;
     }
     message += "simulation mode ";
-    const inteval = 100;
+    const interval = 100;
     setInterval(() => {
       x = Math.random() * 10;
       update();
-    }, inteval);
+    }, interval);
     setInterval(() => {
       y = Math.random() * 10;
       update();
-    }, inteval);
+    }, interval);
     setInterval(() => {
       z = Math.random() * 10;
       update();
-    }, inteval);
-
-    console.log(barWidth * historyLength);
+    }, interval);
   }, 100);
 
   function update() {
@@ -78,30 +76,19 @@
     history = history;
   }
 
+  function makeSVGPath(x, y) {
+    return `L${x * barWidth} ${((y / max) * height) / 2 + height / 2}`;
+  }
+
   const max = 40;
   $: xPath = `M0 ${height / 2} `.concat(
-    history
-      .map(
-        ({ x }, i) =>
-          `L${i * barWidth} ${((x / max) * height) / 2 + height / 2}`
-      )
-      .join(" ")
+    history.map(({ x }, i) => makeSVGPath(i, x)).join(" ")
   );
   $: yPath = `M0 ${height / 2} `.concat(
-    history
-      .map(
-        ({ y }, i) =>
-          `L${i * barWidth} ${((y / max) * height) / 2 + height / 2}`
-      )
-      .join(" ")
+    history.map(({ y }, i) => makeSVGPath(i, y)).join(" ")
   );
   $: zPath = `M0 ${height / 2} `.concat(
-    history
-      .map(
-        ({ z }, i) =>
-          `L${i * barWidth} ${((z / max) * height) / 2 + height / 2}`
-      )
-      .join(" ")
+    history.map(({ z }, i) => makeSVGPath(i, z)).join(" ")
   );
 </script>
 
@@ -152,7 +139,7 @@
 
 <h1 style="color:red">{message}</h1>
 
-<br>
+<br />
 <h3>Data:</h3>
 <h4>X: {x}</h4>
 <h4>Y: {y}</h4>

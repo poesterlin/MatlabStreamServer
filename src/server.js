@@ -12,7 +12,7 @@ const dev = NODE_ENV === "development";
 
 const server = http.createServer();
 
-polka({ server }) // You can also use Express
+polka({ server }) 
   .use(
     compression({ threshold: 0 }),
     sirv("static", { dev }),
