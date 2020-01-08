@@ -2,20 +2,28 @@ import sirv from "sirv";
 import polka from "polka";
 import compression from "compression";
 import * as sapper from "@sapper/server";
-import http from "http";
 import io from "socket.io";
 import tmp from "tmp";
-import { writeFile, readdirSync, unlinkSync } from "fs";
+import { writeFile, readdirSync, unlinkSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-// import * as onnx from "onnxjs-node";
+import { createServer } from 'https';
+import * as http from 'http';
 
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === "development";
-const server = http.createServer();
+
+const options = {};
+
+if (!dev) {
+  options.key = readFileSync("/etc/letsencrypt/live/matlab.oesterlin.dev-0001/privkey.pem");
+  options.cert = readFileSync("/etc/letsencrypt/live/matlab.oesterlin.dev-0001/cert.pem");
+  options.ca = readFileSync("/etc/letsencrypt/live/matlab.oesterlin.dev-0001/chain.pem");
+}
+
 const tmpDir = "csv";
 
-cleanTemp();
+// cleanTemp();
 
 function cleanTemp() {
   return readdirSync(tmpDir, { withFileTypes: true })
@@ -31,15 +39,21 @@ function cleanTemp() {
 
 process.on("beforeExit", cleanTemp);
 
-polka({ server })
-  .use(
-    compression({ threshold: 0 }),
-    sirv("static", { dev }),
-    sapper.middleware()
-  )
-  .listen(PORT, err => {
-    if (err) console.log("error", err);
-  });
+const { handler } = polka().use(
+  compression({ threshold: 0 }),
+  sirv("static", { dev }),
+  sapper.middleware()
+)
+
+let create = createServer;
+if(dev){
+  create = http.createServer
+}
+
+const server = create(options, handler).listen(PORT, err => {
+  if(err) throw err;
+  console.log(`> Running on port ${PORT}`);
+});
 
 const socket = io(server);
 socket.on("connection", function (socket) {
@@ -88,23 +102,3 @@ function runMatlab(path) {
     });
   });
 }
-
-
-// const session = new onnx.InferenceSession({backendHint: 'wasm'});
-// const session = new onnx.InferenceSession();
-
-// setupModel().then(predict)
-
-// async function setupModel() {
-//   // use the following in an async method
-//   const url = "./test.onnx";
-//   await session.loadModel(url);
-// }
-
-// async function predict() {
-//   const inputs = [
-//     new onnx.Tensor(new Float32Array([1.0, 2.0, 3.0, 4.0]), "float32", [2, 2])
-//   ];
-//   const outputMap = await session.run(inputs);
-//   const outputTensor = outputMap.values().next().value;
-// }

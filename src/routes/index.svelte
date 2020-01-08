@@ -2,7 +2,7 @@
   import io from "socket.io-client";
 
   $: history = [];
-  const historyLength = 300;
+  const historyLength = 100;
 
   $: x = 0;
   $: y = 0;
@@ -80,7 +80,7 @@
     return `L${x * barWidth} ${((y / max) * height) / 2 + height / 2}`;
   }
 
-  const max = 40;
+  const max = 20;
   $: xPath = `M0 ${height / 2} `.concat(
     history.map(({ x }, i) => makeSVGPath(i, x)).join(" ")
   );
