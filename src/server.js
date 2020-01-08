@@ -5,14 +5,32 @@ import * as sapper from "@sapper/server";
 import http from "http";
 import io from "socket.io";
 import tmp from "tmp";
-import { writeFile } from "fs";
+import { writeFile, readdirSync, unlinkSync } from "fs";
 import { spawn } from "child_process";
+import { join } from "path";
+
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === "development";
-
 const server = http.createServer();
+const tmpDir = "csv";
 
-polka({ server }) 
+cleanTemp();
+
+function cleanTemp() {
+  return readdirSync(tmpDir, { withFileTypes: true })
+    .filter(f => f.name.includes(".csv"))
+    .forEach(f => {
+      try {
+        unlinkSync(join(tmpDir, f.name));
+      } catch (error) {
+        console.log(error);
+      }
+    });
+}
+
+process.on("beforeExit", cleanTemp);
+
+polka({ server })
   .use(
     compression({ threshold: 0 }),
     sirv("static", { dev }),
@@ -33,7 +51,7 @@ tmp.setGracefulCleanup();
 
 function saveTmp(arr) {
   tmp.file(
-    { prefix: "data-", postfix: ".csv", dir: "csv" },
+    { prefix: "data-", postfix: ".csv", dir: tmpDir },
     (err, path, _, cleanup) => {
       if (err) {
         console.error(err);
