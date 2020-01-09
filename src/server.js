@@ -3,14 +3,7 @@ import polka from "polka";
 import compression from "compression";
 import * as sapper from "@sapper/server";
 import io from "socket.io";
-import {
-  writeFile,
-  readdirSync,
-  unlinkSync,
-  readFileSync,
-  appendFileSync,
-  writeFileSync
-} from "fs";
+import { readFileSync, appendFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { createServer } from "https";
 import * as http from "http";
@@ -32,27 +25,10 @@ if (!dev) {
   );
 }
 
-const tmpDir = "csv";
-
-// cleanTemp();
-
-function cleanTemp() {
-  return readdirSync(tmpDir, { withFileTypes: true })
-    .filter(f => f.name.includes(".csv"))
-    .forEach(f => {
-      try {
-        unlinkSync(join(tmpDir, f.name));
-      } catch (error) {
-        console.log(error);
-      }
-    });
-}
-
-process.on("beforeExit", cleanTemp);
-
-const app = polka()
-  .get("/csv", (req, res) => {
+const { handler } = polka()
+  .get("/csv", (_, res) => {
     res.end(readFileSync(join("csv", "file.csv")));
+    resetFile("");
   })
   .use(
     compression({ threshold: 0 }),
@@ -65,38 +41,47 @@ if (dev) {
   create = http.createServer;
 }
 
-const server = create(options, app.handler).listen(PORT, err => {
+const server = create(options, handler).listen(PORT, err => {
   if (err) throw err;
-  console.log(`> Running on port ${PORT}`);
+  log(`> Running on port ${PORT}`);
 });
-
-app.get("/csv", (req, res) => {
-  console.log("csv", res.sendFile);
-  res.sendFile("csv/file.csv");
-});
-
-resetFile("");
-
-let lastTs = 0;
 
 const socket = io(server);
-socket.on("connection", function(socket) {
-  socket.on("message", function(data) {
+socket.on("connection", socket => {
+  socket.on("message", data => {
     const newData = JSON.parse(data);
-    lastTs += newData.length;
 
     const csv = newData
       .map((line, i) => `${(i + lastTs) * 100},${line.x},${line.y},${line.z}`)
       .join("\n");
+
+    lastTs += newData.length;
     if (lastTs > 600) {
       resetFile(csv);
     }
+
     appendFileSync(join("csv", "file.csv"), "\n" + csv);
   });
 });
 
+let lastTs = 0;
+resetFile("");
+
 function resetFile(csv) {
   const header = "time x y z\n";
   writeFileSync(join("csv", "file.csv"), header + csv);
-  console.log("reset files");
+  log("---> reset files");
+  lastTs = 0;
+}
+
+function log(message) {
+  const d = new Date();
+  const date = `${d.getHours()} : ${
+    d.getMinutes() > 9 ? d.getMinutes() : "0" + d.getMinutes()
+  } : ${
+    d.getSeconds() > 9 ? d.getSeconds() : "0" + d.getSeconds()
+  } - ${d.getMilliseconds()}`;
+  const width = process.stdout.columns - 20;
+  const equalizer = " ".repeat(width > 0 ? width : 70).slice(message.length);
+  console.log(message + equalizer, date);
 }

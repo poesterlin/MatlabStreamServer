@@ -2,6 +2,7 @@
   import io from "socket.io-client";
 
   $: history = [];
+  let updateIdx = 0;
   const historyLength = 100;
 
   $: x = 0;
@@ -14,16 +15,9 @@
   $: barWidth = document.documentElement.clientWidth / historyLength;
 
   const socket = io();
-  socket.on("results", results => {
-    log.push(results);
-    if (log.length === 10) {
-      log.shift();
-    }
-    log = log;
-  });
 
-  function submit() {
-    socket.emit("message", JSON.stringify(history));
+  function submit(h) {
+    socket.emit("message", JSON.stringify(h));
   }
 
   if ("Accelerometer" in window) {
@@ -65,12 +59,13 @@
 
   function update() {
     history.push({ x, y, z });
-    // if (history.length === historyLength) {
-    //   history.shift();
-    // }
+    updateIdx++;
     if (history.length === historyLength) {
-      submit(history);
-      history = [];
+      history.shift();
+    }
+    if (updateIdx % 20 === 0) {
+      submit(history.slice(-20));
+      updateIdx = 0;
     }
 
     history = history;
@@ -116,19 +111,6 @@
   h4 {
     margin-left: 20px;
   }
-
-  .logs {
-    max-height: 30vh;
-    width: 100vw;
-    overflow: auto;
-  }
-
-  .log {
-    white-space: nowrap;
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 </style>
 
 {@debug barWidth}
@@ -152,10 +134,3 @@
     <path d={zPath} class="z" />
   </g>
 </svg>
-
-<div class="logs">
-  Results:
-  {#each log as l}
-    <div class="log">{l}</div>
-  {/each}
-</div>
