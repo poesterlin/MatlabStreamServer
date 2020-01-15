@@ -8,8 +8,12 @@ import { join } from "path";
 import { createServer } from "https";
 import * as http from "http";
 
-const { PORT, NODE_ENV } = process.env;
+let { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === "development";
+
+if (!dev) {
+  PORT = 443;
+}
 
 const options = {};
 
@@ -56,7 +60,7 @@ socket.on("connection", socket => {
       .join("\n");
 
     lastTs += newData.length;
-    if (lastTs > 600) {
+    if (lastTs > 12000) {
       resetFile(csv);
     }
 
@@ -68,7 +72,7 @@ let lastTs = 0;
 resetFile("");
 
 function resetFile(csv) {
-  const header = "time x y z\n";
+  const header = "time x y z";
   writeFileSync(join("csv", "file.csv"), header + csv);
   log("---> reset files");
   lastTs = 0;
@@ -78,9 +82,9 @@ function log(message) {
   const d = new Date();
   const date = `${d.getHours()} : ${
     d.getMinutes() > 9 ? d.getMinutes() : "0" + d.getMinutes()
-  } : ${
+    } : ${
     d.getSeconds() > 9 ? d.getSeconds() : "0" + d.getSeconds()
-  } - ${d.getMilliseconds()}`;
+    } - ${d.getMilliseconds()}`;
   const width = process.stdout.columns - 20;
   const equalizer = " ".repeat(width > 0 ? width : 70).slice(message.length);
   console.log(message + equalizer, date);
