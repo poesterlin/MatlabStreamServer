@@ -76,21 +76,25 @@
   }
 
   const max = 20;
-  $: xPath = `M0 ${height / 2} `.concat(
-    history.map(({ x }, i) => makeSVGPath(i, x)).join(" ")
-  );
-  $: yPath = `M0 ${height / 2} `.concat(
-    history.map(({ y }, i) => makeSVGPath(i, y)).join(" ")
-  );
-  $: zPath = `M0 ${height / 2} `.concat(
-    history.map(({ z }, i) => makeSVGPath(i, z)).join(" ")
-  );
+  $: xPath =
+    `M0 ${height / 2} ` +
+    history.map(({ x }, i) => makeSVGPath(i, x)).join(" ");
+  $: yPath =
+    `M0 ${height / 2} ` +
+    history.map(({ y }, i) => makeSVGPath(i, y)).join(" ");
+  $: zPath =
+    `M0 ${height / 2} ` +
+    history.map(({ z }, i) => makeSVGPath(i, z)).join(" ");
 </script>
 
 <style>
-  svg {
+  svg.hist {
     width: 100vw;
     height: 300px;
+  }
+  .block {
+    width: 10px;
+    height: 10px;
   }
   .bars path {
     opacity: 0.4;
@@ -99,13 +103,16 @@
   }
 
   .x {
-    stroke: rgb(0, 0, 0);
+    stroke: red;
+    fill: red;
   }
   .y {
-    stroke: rgb(62, 119, 62);
+    stroke: black;
+    fill: black;
   }
   .z {
     stroke: rgb(16, 126, 13);
+    fill: rgb(16, 126, 13);
   }
   h1,
   h4 {
@@ -122,12 +129,31 @@
 <h1 style="color:red">{message}</h1>
 
 <br />
-<h3>Data:</h3>
-<h4>X: {x}</h4>
-<h4>Y: {y}</h4>
-<h4>Z: {z}</h4>
+<h3>
+  <b>Data:</b>
+</h3>
 
-<svg>
+<h4>
+  <svg class="block">
+    <rect width="10px" height="10px" class="x" />
+  </svg>
+  X: {x}
+</h4>
+
+<h4>
+  <svg class="block">
+    <rect width="10px" height="10px" class="y" />
+  </svg>
+  Y: {y}
+</h4>
+<h4>
+  <svg class="block">
+    <rect width="10px" height="10px" class="z" />
+  </svg>
+  Z: {z}
+</h4>
+
+<svg class="hist">
   <g class="bars">
     <path d={xPath} class="x" />
     <path d={yPath} class="y" />
