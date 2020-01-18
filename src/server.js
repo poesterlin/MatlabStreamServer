@@ -3,8 +3,7 @@ import polka from "polka";
 import compression from "compression";
 import * as sapper from "@sapper/server";
 import io from "socket.io";
-import { readFileSync, appendFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "fs";
 import { createServer } from "https";
 import * as http from "http";
 
@@ -29,13 +28,15 @@ if (!dev) {
   );
 }
 
+let history = '';
 const { handler } = polka()
   .get("/csv", (_, res) => {
-    res.end(readFileSync(join("csv", "file.csv")));
+
+    res.end(history);
     resetFile("");
   })
   .use(
-    compression({ threshold: 0 }),
+    compression({ threshold: 0, level: 9 }),
     sirv("static", { dev }),
     sapper.middleware()
   );
@@ -64,7 +65,7 @@ socket.on("connection", socket => {
       resetFile(csv);
     }
 
-    appendFileSync(join("csv", "file.csv"), "\n" + csv);
+    history += "\n" + csv;
   });
 });
 
@@ -73,7 +74,7 @@ resetFile("");
 
 function resetFile(csv) {
   const header = "time x y z";
-  writeFileSync(join("csv", "file.csv"), header + csv);
+  history = header + csv;
   log("---> reset files");
   lastTs = 0;
 }
